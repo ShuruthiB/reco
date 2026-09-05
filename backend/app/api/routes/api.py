@@ -33,8 +33,10 @@ from app.services import (
     SimulationService,
     TransactionService,
 )
+from app.api.routes import webhooks
 
 router = APIRouter(prefix="/api", tags=["api"])
+router.include_router(webhooks.router, prefix="", tags=["webhooks"])
 
 
 @router.get("/dashboard/metrics", response_model=DashboardMetricsResponse)
