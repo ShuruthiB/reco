@@ -15,6 +15,11 @@ class Settings(BaseSettings):
     api_prefix: str = ""
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
     default_merchant_id: str | None = None
+    
+    # Razorpay Test Mode
+    razorpay_key_id: str | None = None
+    razorpay_key_secret: str | None = None
+    razorpay_webhook_secret: str | None = None
 
     @property
     def cors_origin_list(self) -> list[str]:
