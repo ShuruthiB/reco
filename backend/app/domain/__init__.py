@@ -1,0 +1,1 @@
+"""Domain SQLAlchemy models."""
