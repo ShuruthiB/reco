@@ -48,14 +48,37 @@ def main(n_samples: int = 5000):
     y_pred_proba_base = baseline_model.predict_proba(X_baseline_val)
     base_metrics = evaluate_model(y_baseline_val, y_pred_proba_base)
     
-    metrics = {
-        "baseline_model": base_metrics
-    }
+    metrics = {"baseline_model": base_metrics}
     
-    print(f"Baseline Validation ROC-AUC: {base_metrics.get('roc_auc', 0):.4f}")
+    print("\nMODEL EVALUATION\n")
+    print("Natural Recovery Model")
+    print("----------------------")
+    print(f"ROC-AUC: {base_metrics.get('roc_auc', 0):.2f}")
+    print(f"PR-AUC: {base_metrics.get('pr_auc', 0):.2f}")
+    print(f"Precision: {base_metrics.get('precision', 0):.2f}")
+    print(f"Recall: {base_metrics.get('recall', 0):.2f}\n")
     
-    # 4. Serialization
-    print("Serializing models...")
+    print("Uplift model")
+    print("------------")
+    print("Mean estimated uplift")
+    
+    # Calculate mean estimated uplift for each action on the validation set
+    actions = ["RETRY", "REMINDER", "INCENTIVE", "ALTERNATIVE_METHOD"]
+    y_pred_proba_base_all = baseline_model.predict_proba(X_val)
+    
+    metrics["uplift_model"] = {}
+    for act in actions:
+        if act in uplift_model.models and uplift_model.models[act] is not None:
+            treat_prob = uplift_model.predict_proba_treatment(X_val, act)
+            uplift = (treat_prob - y_pred_proba_base_all).clip(lower=0)
+            mean_uplift = float(uplift.mean())
+        else:
+            mean_uplift = 0.0
+            
+        metrics["uplift_model"][act] = {"mean_estimated_uplift": mean_uplift}
+        print(f"  {act}: {mean_uplift:.4f}")
+    
+    print("\nSerializing models...")
     models_dir = os.path.join(os.path.dirname(__file__), "models")
     os.makedirs(models_dir, exist_ok=True)
     

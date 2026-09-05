@@ -1,9 +1,23 @@
 {
     "baseline_model": {
-        "roc_auc": 0.6888888888888889,
-        "pr_auc": 0.35,
+        "roc_auc": 0.6222651222651223,
+        "pr_auc": 0.17317029986130708,
         "precision": 0.0,
         "recall": 0.0,
         "f1": 0.0
+    },
+    "uplift_model": {
+        "RETRY": {
+            "mean_estimated_uplift": 0.049937821729484765
+        },
+        "REMINDER": {
+            "mean_estimated_uplift": 0.09361344019795674
+        },
+        "INCENTIVE": {
+            "mean_estimated_uplift": 0.2611521947778884
+        },
+        "ALTERNATIVE_METHOD": {
+            "mean_estimated_uplift": 0.17886642394184477
+        }
     }
 }
