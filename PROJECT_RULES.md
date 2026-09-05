@@ -132,6 +132,7 @@ idempotency_key	Request and command deduplication record
 
 
 All tenant-owned records must include merchant_id.
+
 6. API boundaries
 - /auth/* — identity and session management
 - /merchants/* — merchant configuration and users
