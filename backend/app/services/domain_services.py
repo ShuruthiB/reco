@@ -433,7 +433,7 @@ class ExperimentService:
             eligibility_rules=exp.eligibility_rules or {},
         )
 
-    async def create_experiment(self, merchant_id: UUID, request: Any) -> ExperimentDetailResponse:
+    async def create_experiment(self, merchant_id: UUID, request: 'ExperimentCreateRequest') -> ExperimentDetailResponse:
         from app.domain.models import Experiment
         import uuid
         from datetime import datetime, timezone

@@ -193,3 +193,33 @@ class AuditEventResponse(BaseModel):
     details: str
     entity_type: str | None = None
     entity_id: UUID | None = None
+
+
+class OptimizerRequest(BaseModel):
+    total_budget: Decimal
+    max_customer_incentive: Decimal
+    max_discount: Decimal
+    max_retries: int
+    min_confidence: Decimal
+    allowed_interventions: list[str]
+
+
+class OptimizerOpportunity(BaseModel):
+    transaction_id: str
+    amount: Decimal
+    action: str
+    predicted_uplift: Decimal
+    expected_incremental_value: Decimal
+    intervention_cost: Decimal
+    net_incremental_value: Decimal
+    roi: Decimal
+    rejected: bool
+    rejection_reason: str | None = None
+
+
+class OptimizerResponse(BaseModel):
+    total_budget: Decimal
+    budget_allocated: Decimal
+    budget_remaining: Decimal
+    top_opportunities: list[OptimizerOpportunity]
+    rejected_opportunities: list[OptimizerOpportunity]

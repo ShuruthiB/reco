@@ -17,6 +17,8 @@ from app.schemas.api import (
     ExperimentCreateRequest,
     ExperimentDetailResponse,
     ExperimentSummaryResponse,
+    OptimizerRequest,
+    OptimizerResponse,
     PaymentEventResponse,
     PolicyResponse,
     SimulationRequest,
@@ -130,6 +132,64 @@ async def create_experiment(
     session: AsyncSession = Depends(get_db_session),
 ) -> ExperimentDetailResponse:
     return await ExperimentService(session).create_experiment(merchant_id, request)
+
+
+@router.post("/experiments", response_model=ExperimentDetailResponse)
+async def create_experiment(
+    request: ExperimentCreateRequest,
+    merchant_id: UUID = Depends(get_merchant_id),
+    session: AsyncSession = Depends(get_db_session),
+) -> ExperimentDetailResponse:
+    return await ExperimentService(session).create_experiment(merchant_id, request)
+
+
+@router.post("/optimizer/simulate", response_model=OptimizerResponse)
+async def simulate_budget_optimizer(
+    request: OptimizerRequest,
+    merchant_id: UUID = Depends(get_merchant_id),
+    session: AsyncSession = Depends(get_db_session),
+) -> OptimizerResponse:
+    from app.engine.optimizer import BudgetOptimizer, OptimizerConstraints
+    from app.engine.decision_engine import DecisionEngine
+    from app.schemas.api import OptimizerOpportunity
+    
+    # Get last 50 failed/pending transactions to optimize over
+    tx_service = TransactionService(session)
+    paginated_txs = await tx_service.list_transactions(merchant_id, page=1, page_size=50)
+    
+    # Format transactions for optimizer
+    tx_list = []
+    for tx in paginated_txs.items:
+        tx_list.append({
+            "transaction_id": str(tx.id),
+            "amount": tx.amount,
+            "metadata": {
+                "risk_profile": tx.risk_level or "medium",
+                "state_version": 1,
+            }
+        })
+        
+    engine = DecisionEngine(policies={}) # Use default heuristic math
+    constraints = OptimizerConstraints(
+        total_budget=request.total_budget,
+        max_customer_incentive=request.max_customer_incentive,
+        max_discount=request.max_discount,
+        max_retries=request.max_retries,
+        min_confidence=request.min_confidence,
+        allowed_interventions=request.allowed_interventions,
+    )
+    
+    optimizer = BudgetOptimizer(constraints, engine)
+    result = optimizer.optimize(tx_list)
+    
+    # Map to schema
+    return OptimizerResponse(
+        total_budget=result["total_budget"],
+        budget_allocated=result["budget_allocated"],
+        budget_remaining=result["budget_remaining"],
+        top_opportunities=[OptimizerOpportunity(**o.__dict__) for o in result["top_opportunities"]],
+        rejected_opportunities=[OptimizerOpportunity(**o.__dict__) for o in result["rejected_opportunities"]],
+    )
 
 
 @router.get("/experiments", response_model=list[ExperimentSummaryResponse])
