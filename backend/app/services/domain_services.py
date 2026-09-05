@@ -433,29 +433,81 @@ class ExperimentService:
             eligibility_rules=exp.eligibility_rules or {},
         )
 
-    async def _to_summary(self, exp) -> ExperimentSummaryResponse:
-        from app.schemas.api import ExperimentArmResponse
+    async def create_experiment(self, merchant_id: UUID, request: Any) -> ExperimentDetailResponse:
+        from app.domain.models import Experiment
+        import uuid
+        from datetime import datetime, timezone
+        from decimal import Decimal
+        
+        # Need to dynamically import to avoid circular dep if any
+        exp = Experiment(
+            id=uuid.uuid4(),
+            merchant_id=merchant_id,
+            name=request.name,
+            description=request.hypothesis,
+            status="active",
+            holdout_percentage=request.control_percentage / Decimal('100.0'),
+            arms=[{"name": request.treatment_action, "traffic_share": 1.0 - float(request.control_percentage)/100.0}],
+            eligibility_rules=request.eligible_population_rules,
+            started_at=datetime.now(timezone.utc),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
+        )
+        self.repo.session.add(exp)
+        await self.repo.session.commit()
+        return await self.get_experiment(merchant_id, exp.id)
 
-        total_tx = await self.repo.assignment_count(exp.id)
-        incremental = await self.repo.incremental_revenue(exp.id)
-        arms = [
-            ExperimentArmResponse(
-                name=arm.get("name", "unknown"),
-                traffic_share=Decimal(str(arm.get("traffic_share", 0))),
-                incremental_uplift=Decimal(str(arm.get("incremental_uplift", 0))),
-            )
-            for arm in (exp.arms or [])
-        ]
+    async def _to_summary(self, exp) -> ExperimentSummaryResponse:
+        from app.schemas.api import ExperimentArmResponse, ExperimentSummaryResponse
+        from app.core.utils import minor_to_major
+        from decimal import Decimal
+
+        metrics = await self.repo.get_experiment_metrics(exp.id)
+        
+        control_count = metrics["control_count"]
+        treatment_count = metrics["treatment_count"]
+        
+        control_rate = Decimal(metrics["control_recoveries"]) / Decimal(control_count) if control_count > 0 else Decimal("0")
+        treatment_rate = Decimal(metrics["treatment_recoveries"]) / Decimal(treatment_count) if treatment_count > 0 else Decimal("0")
+        
+        lift = treatment_rate - control_rate
+        
+        treatment_gross = minor_to_major(metrics["treatment_recovered_amount"], "USD")
+        treatment_cost = minor_to_major(metrics["treatment_cost"], "USD")
+        
+        # Incremental revenue = (Treatment Rate - Control Rate) * Treatment Count * Average Transaction Value
+        # For simplicity in this demo, we assume the incremental value is just the lift applied to the gross.
+        # A more precise way is taking the actual incremental amount.
+        # If control rate was X, expected treatment natural recoveries = X * treatment_count
+        # Expected natural gross = (X * treatment_count) * avg_order_value
+        # Let's do a simple calculation:
+        
+        # If they recovered $1000 with a 20% rate, and control had 10% rate, 
+        # then half of that $1000 is incremental.
+        incremental_gross = treatment_gross * (lift / treatment_rate) if treatment_rate > 0 and lift > 0 else Decimal("0")
+        net_contrib = incremental_gross - treatment_cost
+
+        # Statistical significance heuristic (N > 100 per arm)
+        has_stat_sig = control_count >= 100 and treatment_count >= 100
+
         return ExperimentSummaryResponse(
             id=exp.id,
             name=exp.name,
             description=exp.description,
-            status="active" if exp.status == "running" else exp.status,
+            status="active" if exp.status in ["running", "active"] else exp.status,
             start_date=exp.started_at,
             end_date=exp.ended_at,
-            arms=arms,
-            total_transactions=total_tx,
-            incremental_revenue=minor_to_major(incremental, "USD"),
+            total_transactions=metrics["total_transactions"],
+            control_recovery_rate=control_rate,
+            treatment_recovery_rate=treatment_rate,
+            estimated_lift_points=lift * Decimal("100"), # as percentage points
+            recovered_gross_value=treatment_gross,
+            intervention_cost=treatment_cost,
+            net_incremental_contribution=net_contrib,
+            currency="USD",
+            has_statistical_significance=has_stat_sig,
+            control_count=control_count,
+            treatment_count=treatment_count
         )
 
 

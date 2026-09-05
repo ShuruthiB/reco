@@ -116,7 +116,28 @@ class DecisionEngine:
             {"action": "DO_NOTHING", "uplift": 0.0, "confidence": 1.00, "discount_pct": 0.0},
         ]
 
-    def make_decision(self, transaction_id: str, amount_minor: int, currency: str, transaction_metadata: Dict[str, Any]) -> EngineDecision:
+    def assign_to_experiment(self, transaction_id: str, active_experiment: Dict[str, Any] = None) -> str:
+        """
+        Deterministically assign a transaction to an experiment arm based on holdout percentage.
+        Returns 'treatment' or 'control'.
+        """
+        if not active_experiment:
+            return "treatment" # Default to policy if no experiment
+
+        holdout_pct = float(active_experiment.get("holdout_percentage", 0.1))
+        
+        # Simple deterministic hash for assignment
+        import hashlib
+        hash_val = int(hashlib.md5(transaction_id.encode('utf-8')).hexdigest()[:8], 16)
+        
+        # 0xFFFFFFFF is max for 8 hex chars
+        threshold = int(0xFFFFFFFF * holdout_pct)
+        
+        if hash_val < threshold:
+            return "control"
+        return "treatment"
+
+    def make_decision(self, transaction_id: str, amount_minor: int, currency: str, transaction_metadata: Dict[str, Any], active_experiment: Dict[str, Any] = None) -> EngineDecision:
         amount = Decimal(amount_minor) / Decimal("100.0")
         risk_profile = transaction_metadata.get("risk_profile", "medium")
         state_version = transaction_metadata.get("state_version", 1)
@@ -203,6 +224,13 @@ class DecisionEngine:
         ]
         
         # 11. Produce a final decision object
+        
+        # Apply experiment assignment
+        assignment = self.assign_to_experiment(transaction_id, active_experiment)
+        if assignment == "control":
+            # If in control, force DO_NOTHING to measure natural recovery
+            best_candidate = next((c for c in evaluated_candidates if c.action == "DO_NOTHING"), best_candidate)
+
         return EngineDecision(
             transaction_id=transaction_id,
             selected_action=best_candidate.action,

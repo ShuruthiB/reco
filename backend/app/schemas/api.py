@@ -110,6 +110,16 @@ class SimulationResponse(BaseModel):
     candidates: list[SimulationCandidateResponse]
 
 
+class ExperimentCreateRequest(BaseModel):
+    name: str
+    hypothesis: str | None = None
+    eligible_population_rules: dict = Field(default_factory=dict)
+    control_percentage: Decimal = Field(ge=0, le=100)
+    treatment_action: str
+    duration_days: int = Field(gt=0)
+    budget_minor: int = Field(ge=0)
+
+
 class ExperimentArmResponse(BaseModel):
     name: str
     traffic_share: Decimal
@@ -125,15 +135,23 @@ class ExperimentSummaryResponse(BaseModel):
     status: str
     start_date: datetime | None = None
     end_date: datetime | None = None
-    arms: list[ExperimentArmResponse]
     total_transactions: int
-    incremental_revenue: Decimal
+    control_recovery_rate: Decimal
+    treatment_recovery_rate: Decimal
+    estimated_lift_points: Decimal
+    recovered_gross_value: Decimal
+    intervention_cost: Decimal
+    net_incremental_contribution: Decimal
     currency: str = "USD"
+    has_statistical_significance: bool = False
+    control_count: int = 0
+    treatment_count: int = 0
 
 
 class ExperimentDetailResponse(ExperimentSummaryResponse):
     holdout_percentage: Decimal
     eligibility_rules: dict = Field(default_factory=dict)
+    arms: list[ExperimentArmResponse] = Field(default_factory=list)
 
 
 class BudgetResponse(BaseModel):

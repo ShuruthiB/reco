@@ -14,6 +14,7 @@ from app.schemas.api import (
     DecisionPreviewRequest,
     DecisionPreviewResponse,
     DecisionResponse,
+    ExperimentCreateRequest,
     ExperimentDetailResponse,
     ExperimentSummaryResponse,
     PaymentEventResponse,
@@ -120,6 +121,15 @@ async def run_simulation(
     result = await SimulationService(session).run_simulation(merchant_id, request)
     await AuditModule(AuditWriter(session)).record_simulation(merchant_id)
     return result
+
+
+@router.post("/experiments", response_model=ExperimentDetailResponse)
+async def create_experiment(
+    request: ExperimentCreateRequest,
+    merchant_id: UUID = Depends(get_merchant_id),
+    session: AsyncSession = Depends(get_db_session),
+) -> ExperimentDetailResponse:
+    return await ExperimentService(session).create_experiment(merchant_id, request)
 
 
 @router.get("/experiments", response_model=list[ExperimentSummaryResponse])
