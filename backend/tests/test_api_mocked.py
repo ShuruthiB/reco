@@ -141,12 +141,16 @@ async def test_list_experiments(mock_service_cls, client_mocked):
         ExperimentSummaryResponse(
             id=uuid.uuid4(),
             name="Test Exp",
-            description="Desc",
             status="active",
             start_date="2026-09-01T00:00:00Z",
-            arms=[],
             total_transactions=1000,
             incremental_revenue=Decimal("5000.00"),
+            control_recovery_rate=Decimal("0.1"),
+            treatment_recovery_rate=Decimal("0.15"),
+            estimated_lift_points=Decimal("5.0"),
+            recovered_gross_value=Decimal("1000.00"),
+            intervention_cost=Decimal("50.00"),
+            net_incremental_contribution=Decimal("950.00")
         )
     ])
     
@@ -169,6 +173,12 @@ async def test_get_experiment(mock_service_cls, client_mocked):
         arms=[],
         total_transactions=1000,
         incremental_revenue=Decimal("5000.00"),
+        control_recovery_rate=Decimal("0.1"),
+        treatment_recovery_rate=Decimal("0.15"),
+        estimated_lift_points=Decimal("5.0"),
+        recovered_gross_value=Decimal("1000.00"),
+        intervention_cost=Decimal("50.00"),
+        net_incremental_contribution=Decimal("950.00"),
         holdout_percentage=Decimal("0.10"),
         eligibility_rules={}
     ))

@@ -22,10 +22,10 @@ class ActionCandidate:
 class EngineDecision:
     transaction_id: str
     selected_action: str
-    expected_value: float
-    predicted_uplift: float
-    intervention_cost: float
-    confidence: float
+    expected_value: Decimal
+    predicted_uplift: Decimal
+    intervention_cost: Decimal
+    confidence: Decimal
     model_version: str
     policy_version: str
     alternative_actions: List[Dict[str, Any]]
@@ -216,7 +216,7 @@ class DecisionEngine:
         alternative_actions = [
             {
                 "action": c.action,
-                "expected_value": float(c.expected_value),
+                "expected_value": c.expected_value,
                 "is_valid": c.is_valid,
                 "rejection_reasons": c.rejection_reasons
             }
@@ -234,10 +234,10 @@ class DecisionEngine:
         return EngineDecision(
             transaction_id=transaction_id,
             selected_action=best_candidate.action,
-            expected_value=float(best_candidate.expected_value),
-            predicted_uplift=float(best_candidate.predicted_uplift),
-            intervention_cost=float(best_candidate.intervention_cost),
-            confidence=float(best_candidate.confidence),
+            expected_value=best_candidate.expected_value,
+            predicted_uplift=best_candidate.predicted_uplift,
+            intervention_cost=best_candidate.intervention_cost,
+            confidence=best_candidate.confidence,
             model_version=self.model_version,
             policy_version=self.policy_version,
             alternative_actions=alternative_actions,

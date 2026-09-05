@@ -459,7 +459,7 @@ class ExperimentService:
 
     async def _to_summary(self, exp) -> ExperimentSummaryResponse:
         from app.schemas.api import ExperimentArmResponse, ExperimentSummaryResponse
-        from app.core.utils import minor_to_major
+        from app.schemas.common import minor_to_major
         from decimal import Decimal
 
         metrics = await self.repo.get_experiment_metrics(exp.id)

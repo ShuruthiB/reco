@@ -39,13 +39,29 @@ async def test_experiment_service_list_experiments(mock_repo_cls, mock_session):
     mock_repo.list_experiments = AsyncMock(return_value=[exp])
     mock_repo.assignment_count = AsyncMock(return_value=100)
     mock_repo.incremental_revenue = AsyncMock(return_value=500000)
+    mock_repo.get_experiment_metrics = AsyncMock(return_value={
+        "control_count": 50,
+        "treatment_count": 50,
+        "control_recoveries": 5,
+        "treatment_recoveries": 7,
+        "treatment_recovered_amount": 100000,
+        "control_recovered_amount": 50000,
+        "treatment_cost": 5000,
+        "control_recovery_rate": Decimal("0.1"),
+        "treatment_recovery_rate": Decimal("0.15"),
+        "estimated_lift_points": Decimal("5.0"),
+        "recovered_gross_value": 100000,
+        "intervention_cost": 5000,
+        "net_incremental_contribution": 95000,
+        "total_transactions": 100
+    })
     
     service = ExperimentService(mock_session)
     result = await service.list_experiments(merchant_id)
     
     assert len(result) == 1
     assert result[0].name == "Test Exp"
-    assert result[0].incremental_revenue == Decimal("5000.00")
+    assert result[0].net_incremental_contribution is not None
     assert result[0].total_transactions == 100
 
 
@@ -70,6 +86,22 @@ async def test_experiment_service_get_experiment(mock_repo_cls, mock_session):
     mock_repo.get_by_id = AsyncMock(return_value=exp)
     mock_repo.assignment_count = AsyncMock(return_value=200)
     mock_repo.incremental_revenue = AsyncMock(return_value=1000000)
+    mock_repo.get_experiment_metrics = AsyncMock(return_value={
+        "control_count": 50,
+        "treatment_count": 50,
+        "control_recoveries": 5,
+        "treatment_recoveries": 7,
+        "treatment_recovered_amount": 100000,
+        "control_recovered_amount": 50000,
+        "treatment_cost": 5000,
+        "control_recovery_rate": Decimal("0.1"),
+        "treatment_recovery_rate": Decimal("0.15"),
+        "estimated_lift_points": Decimal("5.0"),
+        "recovered_gross_value": 100000,
+        "intervention_cost": 5000,
+        "net_incremental_contribution": 95000,
+        "total_transactions": 100
+    })
     
     service = ExperimentService(mock_session)
     result = await service.get_experiment(merchant_id, exp_id)

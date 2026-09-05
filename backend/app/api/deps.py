@@ -16,15 +16,9 @@ async def resolve_merchant_id(
 ) -> UUID:
     merchant_id_str = header_merchant_id or settings.default_merchant_id
     if not merchant_id_str:
-        result = await session.execute(
-            select(Merchant.id).where(Merchant.status == "active").limit(1)
+        raise ValidationError(
+            "No merchant context available. Set DEFAULT_MERCHANT_ID or X-Merchant-ID header."
         )
-        merchant_id = result.scalar_one_or_none()
-        if merchant_id is None:
-            raise ValidationError(
-                "No merchant context available. Set DEFAULT_MERCHANT_ID or X-Merchant-ID header."
-            )
-        return merchant_id
 
     try:
         merchant_uuid = UUID(merchant_id_str)
