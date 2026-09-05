@@ -6,6 +6,22 @@
   --color-brand-500: #22c55e;
   --color-brand-600: #16a34a;
   --color-brand-900: #14532d;
+  
+  /* Semantic metric colors */
+  --color-gross-50: #eff6ff;
+  --color-gross-600: #2563eb;
+  
+  --color-natural-50: #f8fafc;
+  --color-natural-500: #64748b;
+  
+  --color-incremental-50: #ecfdf5;
+  --color-incremental-600: #059669;
+  
+  --color-cost-50: #fff1f2;
+  --color-cost-600: #e11d48;
+  
+  --color-net-50: #eef2ff;
+  --color-net-600: #4f46e5;
 }
 
 body {
@@ -26,4 +42,9 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-slate-400;
+}
+
+/* Typography utilities */
+.numeric-data {
+  @apply tabular-nums tracking-tight font-medium;
 }

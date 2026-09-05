@@ -23,8 +23,9 @@ export function TransactionsScreen() {
     },
     {
       header: 'Amount',
+      className: 'text-right',
       cell: (item: Transaction) => (
-        <span className="font-medium">
+        <span className="font-medium numeric-data text-blue-600">
           ${item.amount.toFixed(2)}
         </span>
       ),

@@ -113,15 +113,15 @@ export function InterventionSimulatorScreen() {
                       </div>
                       <div className="flex-1 text-center">
                         <span className="text-xs text-slate-500 block">Incremental Uplift</span>
-                        <span className="text-sm font-medium text-slate-700">+{(c.uplift * 100).toFixed(1)}%</span>
+                        <span className="text-sm font-medium text-emerald-600 numeric-data">+{(c.uplift * 100).toFixed(1)}%</span>
                       </div>
                       <div className="flex-1 text-center">
                         <span className="text-xs text-slate-500 block">Cost</span>
-                        <span className="text-sm font-medium text-red-600">-${c.cost.toFixed(2)}</span>
+                        <span className="text-sm font-medium text-rose-600 numeric-data">-${c.cost.toFixed(2)}</span>
                       </div>
                       <div className="flex-1 text-right">
                         <span className="text-xs text-slate-500 block">Net Expected</span>
-                        <span className={`text-sm font-bold ${c.net > 0 ? 'text-emerald-600' : 'text-slate-500'}`}>${c.net.toFixed(2)}</span>
+                        <span className={`text-sm font-bold numeric-data ${c.net > 0 ? 'text-indigo-600' : 'text-slate-500'}`}>${c.net.toFixed(2)}</span>
                       </div>
                     </div>
                   ))}

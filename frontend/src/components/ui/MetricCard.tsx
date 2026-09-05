@@ -11,7 +11,7 @@ interface MetricCardProps {
     value: number;
     label: string;
   };
-  highlight?: 'positive' | 'neutral' | 'brand';
+  highlight?: 'positive' | 'neutral' | 'brand' | 'gross' | 'natural' | 'incremental' | 'cost' | 'net';
   className?: string;
 }
 
@@ -23,10 +23,13 @@ export function MetricCard({ title, value, subtitle, icon, trend, highlight = 'n
         {icon && <div className="text-slate-400">{icon}</div>}
       </CardHeader>
       <CardContent>
-        <div className={cn("text-2xl font-bold", {
-          'text-green-600': highlight === 'positive',
-          'text-indigo-600': highlight === 'brand',
-          'text-slate-900': highlight === 'neutral'
+        <div className={cn("text-2xl font-bold numeric-data tracking-tight", {
+          'text-emerald-600': highlight === 'positive' || highlight === 'incremental',
+          'text-indigo-600': highlight === 'brand' || highlight === 'net',
+          'text-slate-900': highlight === 'neutral',
+          'text-blue-600': highlight === 'gross',
+          'text-slate-500': highlight === 'natural',
+          'text-rose-600': highlight === 'cost',
         })}>
           {value}
         </div>

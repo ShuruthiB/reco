@@ -37,21 +37,22 @@ export function OverviewDashboard() {
           title="Natural Recovery (Gross)"
           value={formatCurrency(MOCK_DASHBOARD_METRICS.naturalRecovery)}
           icon={<RefreshCcw className="h-4 w-4" />}
+          highlight="natural"
           trend={{ value: 1.2, label: "baseline trend" }}
         />
         <MetricCard
           title="AI Incremental Revenue"
           value={formatCurrency(MOCK_DASHBOARD_METRICS.aiIncrementalRevenue)}
           icon={<Sparkles className="h-4 w-4" />}
-          highlight="brand"
+          highlight="incremental"
           trend={{ value: 14.5, label: "uplift vs baseline" }}
         />
         <MetricCard
           title="Net Incremental Revenue"
           value={formatCurrency(MOCK_DASHBOARD_METRICS.netIncrementalRevenue)}
           subtitle={`After ${formatCurrency(MOCK_DASHBOARD_METRICS.interventionCost)} intervention cost`}
-          icon={<DollarSign className="h-4 w-4 text-emerald-600" />}
-          highlight="positive"
+          icon={<DollarSign className="h-4 w-4 text-indigo-400" />}
+          highlight="net"
         />
       </div>
 
@@ -66,12 +67,12 @@ export function OverviewDashboard() {
                 <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorGross" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#94a3b8" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
                     </linearGradient>
                     <linearGradient id="colorInc" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#059669" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#059669" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -80,8 +81,8 @@ export function OverviewDashboard() {
                   <Tooltip 
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
                   />
-                  <Area type="monotone" dataKey="gross" stroke="#94a3b8" fillOpacity={1} fill="url(#colorGross)" name="Gross Recovery" />
-                  <Area type="monotone" dataKey="incremental" stroke="#4f46e5" fillOpacity={1} fill="url(#colorInc)" name="Incremental Recovery" />
+                  <Area type="monotone" dataKey="gross" stroke="#2563eb" fillOpacity={1} fill="url(#colorGross)" name="Gross Recovery" />
+                  <Area type="monotone" dataKey="incremental" stroke="#059669" fillOpacity={1} fill="url(#colorInc)" name="Incremental Recovery" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -105,8 +106,8 @@ export function OverviewDashboard() {
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} tickFormatter={(value) => `$${value}`} />
                   <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                  <Bar dataKey="net" fill="#10b981" name="Net Revenue" radius={[4, 4, 0, 0]} barSize={32} />
-                  <Bar dataKey="cost" fill="#ef4444" name="Cost" radius={[4, 4, 0, 0]} barSize={32} />
+                  <Bar dataKey="net" fill="#4f46e5" name="Net Revenue" radius={[4, 4, 0, 0]} barSize={32} />
+                  <Bar dataKey="cost" fill="#e11d48" name="Cost" radius={[4, 4, 0, 0]} barSize={32} />
                 </BarChart>
               </ResponsiveContainer>
              </div>

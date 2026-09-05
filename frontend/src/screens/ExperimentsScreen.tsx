@@ -144,7 +144,7 @@ export function ExperimentsScreen() {
                   </div>
                   <div>
                     <CardTitle className="text-lg">{exp.name}</CardTitle>
-                    <p className="text-xs text-slate-500 mt-1">Started {new Date(exp.start_date || '').toLocaleDateString()}</p>
+                    <p className="text-xs text-slate-500 mt-1">Started {new Date(exp.startDate || '').toLocaleDateString()}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -198,19 +198,19 @@ export function ExperimentsScreen() {
                       
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-sm text-slate-600">Gross recovered:</span>
-                        <span className="text-base font-medium text-slate-900">₹{exp.recovered_gross_value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        <span className="text-base font-medium text-blue-600 numeric-data">₹{exp.recovered_gross_value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                       </div>
                       
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-sm text-slate-600">Intervention cost:</span>
-                        <span className="text-base font-medium text-red-600">-₹{exp.intervention_cost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        <span className="text-base font-medium text-rose-600 numeric-data">-₹{exp.intervention_cost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                       </div>
                       
                       <div className="h-px bg-slate-200 my-4 w-full" />
                       
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-bold text-slate-900">Net incremental contribution:</span>
-                        <span className={`text-xl font-bold ${exp.net_incremental_contribution >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        <span className={`text-xl font-bold numeric-data ${exp.net_incremental_contribution >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
                           {exp.net_incremental_contribution >= 0 ? '' : '-'}₹{Math.abs(exp.net_incremental_contribution).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                         </span>
                       </div>
