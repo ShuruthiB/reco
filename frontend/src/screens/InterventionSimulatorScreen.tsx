@@ -3,31 +3,93 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
 import { Button } from '../components/ui/Button';
 import { Sparkles, ArrowRight } from 'lucide-react';
 
+interface SimulationCandidate {
+  name: string;
+  uplift: number;
+  cost: number;
+  net: number;
+  policy_approved: boolean;
+}
+
+interface SimulationResult {
+  baseline: number;
+  recommended_action: string;
+  candidates: SimulationCandidate[];
+}
+
+function parseSimulationResult(value: unknown): SimulationResult {
+  if (!value || typeof value !== 'object') {
+    throw new Error('The simulation returned an invalid response.');
+  }
+
+  const response = value as Record<string, unknown>;
+  if (typeof response.recommended_action !== 'string' || !Array.isArray(response.candidates)) {
+    throw new Error('The simulation returned an invalid response.');
+  }
+
+  const candidates = response.candidates.map((candidate) => {
+    if (!candidate || typeof candidate !== 'object') {
+      throw new Error('The simulation returned an invalid candidate.');
+    }
+
+    const item = candidate as Record<string, unknown>;
+    if (typeof item.name !== 'string' || typeof item.policy_approved !== 'boolean') {
+      throw new Error('The simulation returned an invalid candidate.');
+    }
+
+    return {
+      name: item.name,
+      uplift: Number(item.uplift),
+      cost: Number(item.cost),
+      net: Number(item.net),
+      policy_approved: item.policy_approved,
+    };
+  });
+
+  if (
+    !Number.isFinite(Number(response.baseline)) ||
+    candidates.some((candidate) => !Number.isFinite(candidate.uplift) || !Number.isFinite(candidate.cost) || !Number.isFinite(candidate.net))
+  ) {
+    throw new Error('The simulation returned invalid numeric values.');
+  }
+
+  return {
+    baseline: Number(response.baseline),
+    recommended_action: response.recommended_action,
+    candidates,
+  };
+}
+
 export function InterventionSimulatorScreen() {
   const [amount, setAmount] = useState('500');
   const [risk, setRisk] = useState('high');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<SimulationResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSimulate = (e: FormEvent) => {
+  const handleSimulate = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Fake simulation delay
-    setTimeout(() => {
-      const amt = parseFloat(amount);
-      const isHigh = risk === 'high';
-      setResult({
-        baseline: isHigh ? 0.05 : 0.20,
-        candidates: [
-          { name: 'DO_NOTHING', uplift: 0, cost: 0, net: 0 },
-          { name: 'RETRY', uplift: 0.02, cost: 0.5, net: (amt * 0.02) - 0.5 },
-          { name: 'REMINDER_EMAIL', uplift: 0.08, cost: 0.01, net: (amt * 0.08) - 0.01 },
-          { name: 'INCENTIVE_10', uplift: 0.25, cost: amt * 0.1, net: (amt * 0.25) - (amt * 0.1) },
-          { name: 'INCENTIVE_20', uplift: 0.35, cost: amt * 0.2, net: (amt * 0.35) - (amt * 0.2) },
-        ].sort((a, b) => b.net - a.net)
+    setError(null);
+    try {
+      const response = await fetch('/api/simulations/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: Number(amount), currency: 'USD', risk_profile: risk }),
       });
+
+      if (!response.ok) {
+        throw new Error('The simulation could not be completed.');
+      }
+
+      setResult(parseSimulationResult(await response.json()));
+    } catch (requestError) {
+      console.error(requestError);
+      setResult(null);
+      setError('Unable to connect to the simulation service.');
+    } finally {
       setLoading(false);
-    }, 600);
+    }
   };
 
   return (
@@ -90,6 +152,11 @@ export function InterventionSimulatorScreen() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
               </div>
             )}
+            {error && !loading && (
+              <div className="h-64 flex items-center justify-center border border-rose-200 rounded-lg bg-rose-50">
+                <p className="text-rose-700 text-sm">{error}</p>
+              </div>
+            )}
             {result && !loading && (
               <div className="space-y-6">
                 <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 flex justify-between items-center">
@@ -100,14 +167,14 @@ export function InterventionSimulatorScreen() {
                   <ArrowRight className="text-slate-300" />
                   <div className="text-right">
                     <p className="text-sm text-slate-500 mb-1">Best Recommended Action</p>
-                    <p className="text-lg font-bold text-indigo-600">{result.candidates[0].name.replace(/_/g, ' ')}</p>
+                    <p className="text-lg font-bold text-indigo-600">{result.recommended_action.replace(/_/g, ' ')}</p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold text-slate-900">Ranked Interventions</h4>
-                  {result.candidates.map((c: any, i: number) => (
-                    <div key={c.name} className={`flex items-center justify-between p-3 rounded-md border ${i === 0 ? 'border-indigo-200 bg-indigo-50/50' : 'border-slate-100 bg-white'}`}>
+                  {result.candidates.map((c) => (
+                    <div key={c.name} className={`flex items-center justify-between p-3 rounded-md border ${c.name === result.recommended_action ? 'border-indigo-200 bg-indigo-50/50' : 'border-slate-100 bg-white'}`}>
                       <div className="flex-1">
                         <span className="font-medium text-sm text-slate-900">{c.name.replace(/_/g, ' ')}</span>
                       </div>
@@ -122,6 +189,7 @@ export function InterventionSimulatorScreen() {
                       <div className="flex-1 text-right">
                         <span className="text-xs text-slate-500 block">Net Expected</span>
                         <span className={`text-sm font-bold numeric-data ${c.net > 0 ? 'text-indigo-600' : 'text-slate-500'}`}>${c.net.toFixed(2)}</span>
+                        {!c.policy_approved && <span className="text-xs text-rose-600 block">Policy rejected</span>}
                       </div>
                     </div>
                   ))}
