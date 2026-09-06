@@ -20,6 +20,7 @@ from app.schemas.api import (
     OptimizerRequest,
     OptimizerResponse,
     PaymentEventResponse,
+    PolicyCreateRequest,
     PolicyResponse,
     SimulationRequest,
     SimulationResponse,
@@ -103,6 +104,14 @@ async def get_transaction_decisions(
     return await DecisionService(session).list_decisions(merchant_id, transaction_id)
 
 
+@router.get("/decisions", response_model=list[DecisionResponse])
+async def get_recent_decisions(
+    merchant_id: UUID = Depends(get_merchant_id),
+    session: AsyncSession = Depends(get_db_session),
+) -> list[DecisionResponse]:
+    return await DecisionService(session).list_recent_decisions(merchant_id)
+
+
 @router.post("/decisions/preview", response_model=DecisionPreviewResponse)
 async def preview_decision(
     request: DecisionPreviewRequest,
@@ -123,15 +132,6 @@ async def run_simulation(
     result = await SimulationService(session).run_simulation(merchant_id, request)
     await AuditModule(AuditWriter(session)).record_simulation(merchant_id)
     return result
-
-
-@router.post("/experiments", response_model=ExperimentDetailResponse)
-async def create_experiment(
-    request: ExperimentCreateRequest,
-    merchant_id: UUID = Depends(get_merchant_id),
-    session: AsyncSession = Depends(get_db_session),
-) -> ExperimentDetailResponse:
-    return await ExperimentService(session).create_experiment(merchant_id, request)
 
 
 @router.post("/experiments", response_model=ExperimentDetailResponse)
@@ -223,6 +223,15 @@ async def list_policies(
     session: AsyncSession = Depends(get_db_session),
 ) -> list[PolicyResponse]:
     return await PolicyService(session).list_policies(merchant_id)
+
+
+@router.post("/policies", response_model=PolicyResponse)
+async def create_policy(
+    request: PolicyCreateRequest,
+    merchant_id: UUID = Depends(get_merchant_id),
+    session: AsyncSession = Depends(get_db_session),
+) -> PolicyResponse:
+    return await PolicyService(session).create_policy(merchant_id, request)
 
 
 @router.get("/audit", response_model=PaginatedResponse[AuditEventResponse])

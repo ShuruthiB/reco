@@ -64,6 +64,6 @@ class AuditRepository:
                 actor_id=actor_id,
                 before_state=before_state,
                 after_state=after_state,
-                metadata=metadata or {},
+                metadata_=metadata or {},
             )
         )

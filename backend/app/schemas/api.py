@@ -183,6 +183,11 @@ class PolicyResponse(BaseModel):
     rules: list[str] = Field(default_factory=list)
 
 
+class PolicyCreateRequest(BaseModel):
+    name: str
+    description: str | None = None
+    rules: list[str] = Field(default_factory=list)
+
 class AuditEventResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

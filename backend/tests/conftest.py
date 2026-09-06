@@ -13,9 +13,11 @@ from app.db.session import get_db_session
 from app.domain.models import Merchant
 from app.main import app
 
+from app.core.config import settings
+
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
-    os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/reco"),
+    settings.database_url,
 )
 
 

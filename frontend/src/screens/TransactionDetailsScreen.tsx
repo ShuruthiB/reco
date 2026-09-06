@@ -1,15 +1,57 @@
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { MOCK_TRANSACTIONS, MOCK_DECISIONS } from '../data/mock';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
-import { ArrowLeft, ShieldAlert, CreditCard, Activity } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, CreditCard, Activity, Loader2 } from 'lucide-react';
 
 export function TransactionDetailsScreen() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const transaction = MOCK_TRANSACTIONS.find(t => t.id === id) || MOCK_TRANSACTIONS[0];
-  const decision = MOCK_DECISIONS.find(d => d.transactionId === transaction.id);
+  const [transaction, setTransaction] = useState<any>(null);
+  const [decision, setDecision] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) return;
+    
+    Promise.all([
+      fetch(`http://localhost:8000/api/transactions/${id}`).then(r => r.json()),
+      fetch(`http://localhost:8000/api/transactions/${id}/decisions`).then(r => r.json())
+    ])
+    .then(([txData, decData]) => {
+      setTransaction(txData);
+      if (decData && decData.length > 0) {
+        // Just take the first/latest decision for display
+        setDecision(decData[0]);
+      }
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error("Error fetching transaction details:", err);
+      setLoading(false);
+    });
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+      </div>
+    );
+  }
+
+  if (!transaction) {
+    return (
+      <div className="p-6 text-center text-slate-500">
+        Transaction not found.
+        <br />
+        <Button variant="ghost" className="mt-4" onClick={() => navigate('/transactions')}>
+          Return to list
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -39,12 +81,12 @@ export function TransactionDetailsScreen() {
               </div>
               <div>
                 <p className="text-sm font-medium text-slate-500">Customer</p>
-                <p className="mt-1 text-sm font-medium">{transaction.customerName}</p>
-                <p className="text-xs text-slate-500">{transaction.customerEmail}</p>
+                <p className="mt-1 text-sm font-medium">{transaction.customer_name || 'Anonymous'}</p>
+                <p className="text-xs text-slate-500">{transaction.customer_email || 'No email'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-slate-500">Amount</p>
-                <p className="mt-1 text-lg font-bold">${transaction.amount.toFixed(2)} {transaction.currency}</p>
+                <p className="mt-1 text-lg font-bold">${Number(transaction.amount).toFixed(2)} {transaction.currency}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-slate-500">Provider</p>
@@ -53,10 +95,10 @@ export function TransactionDetailsScreen() {
                   {transaction.provider}
                 </p>
               </div>
-              {transaction.failureReason && (
+              {transaction.failure_reason && (
                 <div className="col-span-2 bg-red-50 p-3 rounded-md border border-red-100 mt-2">
                   <p className="text-xs font-semibold text-red-800 uppercase tracking-wider mb-1">Failure Reason</p>
-                  <p className="text-sm text-red-900">{transaction.failureReason.replace(/_/g, ' ')}</p>
+                  <p className="text-sm text-red-900">{transaction.failure_reason.replace(/_/g, ' ')}</p>
                 </div>
               )}
             </div>
@@ -71,8 +113,8 @@ export function TransactionDetailsScreen() {
             <div>
               <p className="text-sm font-medium text-slate-500 mb-2">Risk Level</p>
               <div className="flex items-center gap-2">
-                <ShieldAlert className={`w-5 h-5 ${transaction.riskLevel === 'high' ? 'text-red-500' : 'text-yellow-500'}`} />
-                <span className="font-medium capitalize">{transaction.riskLevel} Risk</span>
+                <ShieldAlert className={`w-5 h-5 ${(transaction.risk_level || 'low') === 'high' ? 'text-red-500' : 'text-yellow-500'}`} />
+                <span className="font-medium capitalize">{transaction.risk_level || 'low'} Risk</span>
               </div>
             </div>
             <hr className="border-slate-100" />
@@ -82,7 +124,7 @@ export function TransactionDetailsScreen() {
                 <div className="space-y-3">
                   <Badge variant="neutral" className="bg-indigo-50 text-indigo-700 border border-indigo-100">
                     <Activity className="w-3 h-3 mr-1" />
-                    {decision.recommendedAction.replace(/_/g, ' ')}
+                    {decision.recommended_action?.replace(/_/g, ' ')}
                   </Badge>
                   <p className="text-xs text-slate-600 bg-slate-50 p-2 rounded border border-slate-100">
                     {decision.rationale}

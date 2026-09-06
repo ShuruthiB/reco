@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 
 from app.api.routes import api, health, demo, metrics
 from app.core.config import settings
@@ -42,13 +43,13 @@ def create_app() -> FastAPI:
     async def validation_error_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
         return JSONResponse(
             status_code=422,
-            content=ErrorResponse(
+            content=jsonable_encoder(ErrorResponse(
                 error=ErrorDetail(
                     code="validation_error",
                     message="Request validation failed.",
                     details={"errors": exc.errors()},
                 )
-            ).model_dump(),
+            )),
         )
 
     @app.exception_handler(RecoError)

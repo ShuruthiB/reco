@@ -56,18 +56,24 @@ def generate_customers(merchant_id, count=5000):
         ))
     return customers
 
-def generate_dataset(db_path, size=10000, seed=42):
+def generate_dataset(db_path, size=10000, seed=42, use_postgres=False):
     set_seed(seed)
     
-    if os.path.exists(db_path):
-        os.remove(db_path)
-        
-    engine = create_engine(f'sqlite:///{db_path}')
+    if use_postgres:
+        from app.core.config import settings
+        # Convert async URL to sync for synchronous sessionmaker
+        sync_url = settings.database_url.replace("+asyncpg", "").replace("+aiosqlite", "")
+        engine = create_engine(sync_url)
+        print(f"Generating exactly {size} transactions with seed {seed} into live database...")
+    else:
+        if os.path.exists(db_path):
+            os.remove(db_path)
+        engine = create_engine(f'sqlite:///{db_path}')
+        print(f"Generating exactly {size} transactions with seed {seed} into {db_path}...")
+    
     Base.metadata.create_all(engine)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     session = SessionLocal()
-    
-    print(f"Generating exactly {size} transactions with seed {seed} into {db_path}...")
     
     merchant = generate_merchant()
     session.add(merchant)
@@ -265,13 +271,16 @@ def generate_dataset(db_path, size=10000, seed=42):
     session.bulk_save_objects(experiment_outcomes)
     
     session.commit()
-    print(f"Successfully generated database at {db_path} with exactly {size} transactions.")
+    
+    dest = "PostgreSQL" if use_postgres else db_path
+    print(f"Successfully generated database at {dest} with exactly {size} transactions.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--size", type=int, default=10000)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--out", type=str, default="ml/datasets/synthetic_competition.db")
+    parser.add_argument("--postgres", action="store_true", help="Generate directly into the PostgreSQL database defined in .env")
     args = parser.parse_args()
     
-    generate_dataset(args.out, size=args.size, seed=args.seed)
+    generate_dataset(args.out, size=args.size, seed=args.seed, use_postgres=args.postgres)

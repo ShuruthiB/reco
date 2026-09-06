@@ -1,15 +1,44 @@
+import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
-import { Activity, Database, Server, Webhook, Zap } from 'lucide-react';
+import { Activity, Database, Server, Webhook, Zap, Loader2 } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 
 export function SystemHealthScreen() {
+  const [health, setHealth] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('http://localhost:8000/api/health')
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        setHealth(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setHealth({ status: 'unavailable', database: 'unavailable', environment: 'unknown' });
+        setLoading(false);
+      });
+  }, []);
+
   const systems = [
-    { name: 'API Gateway', status: 'operational', uptime: '99.99%', ping: '45ms', icon: Server },
-    { name: 'Database / Storage', status: 'operational', uptime: '100%', ping: '12ms', icon: Database },
+    { name: 'API Gateway', status: health?.status === 'ok' ? 'operational' : 'degraded', uptime: '99.99%', ping: '45ms', icon: Server },
+    { name: 'Database / Storage', status: health?.database === 'ok' ? 'operational' : 'degraded', uptime: '100%', ping: '12ms', icon: Database, message: health?.database !== 'ok' ? 'Database connection failed' : undefined },
     { name: 'ML Scoring Engine', status: 'operational', uptime: '99.95%', ping: '85ms', icon: Brain },
-    { name: 'Razorpay Webhooks', status: 'degraded', uptime: '98.50%', ping: '120ms', icon: Webhook, message: 'Elevated latency observed on webhook ingestion.' },
+    { name: 'Razorpay Webhooks', status: 'operational', uptime: '98.50%', ping: '120ms', icon: Webhook },
     { name: 'Execution Workers', status: 'operational', uptime: '99.99%', ping: '20ms', icon: Zap },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

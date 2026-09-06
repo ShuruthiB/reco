@@ -47,9 +47,12 @@ export function RecoveryBudgetScreen() {
       if (res.ok) {
         const data = await res.json();
         setResult(data);
+      } else {
+        alert("Failed to run simulation. Please ensure there are enough recent transactions.");
       }
     } catch (err) {
       console.error(err);
+      alert("Failed to connect to backend API.");
     } finally {
       setLoading(false);
     }

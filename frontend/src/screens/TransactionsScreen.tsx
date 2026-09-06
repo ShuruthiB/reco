@@ -1,10 +1,30 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MOCK_TRANSACTIONS, type Transaction } from '../data/mock';
 import { DataTable } from '../components/ui/DataTable';
 import { Badge } from '../components/ui/Badge';
+import { Loader2 } from 'lucide-react';
 
 export function TransactionsScreen() {
   const navigate = useNavigate();
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('http://localhost:8000/api/transactions?page=1&page_size=50')
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        setTransactions(data.items || []);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching transactions:", err);
+        setTransactions([]);
+        setLoading(false);
+      });
+  }, []);
 
   const columns = [
     {
@@ -14,33 +34,35 @@ export function TransactionsScreen() {
     },
     {
       header: 'Customer',
-      cell: (item: Transaction) => (
+      cell: (item: any) => (
         <div>
-          <div className="font-medium text-slate-900">{item.customerName}</div>
-          <div className="text-xs text-slate-500">{item.customerEmail}</div>
+          <div className="font-medium text-slate-900">{item.customer_name || 'Anonymous'}</div>
+          <div className="text-xs text-slate-500">{item.customer_email || 'No email'}</div>
         </div>
       ),
     },
     {
       header: 'Amount',
       className: 'text-right',
-      cell: (item: Transaction) => (
+      cell: (item: any) => (
         <span className="font-medium numeric-data text-blue-600">
-          ${item.amount.toFixed(2)}
+          ${Number(item.amount).toFixed(2)}
         </span>
       ),
     },
     {
       header: 'Status',
-      cell: (item: Transaction) => {
+      cell: (item: any) => {
         const variants: Record<string, "success" | "warning" | "danger" | "default" | "neutral"> = {
           pending: 'warning',
           recovered: 'success',
           failed: 'danger',
-          quarantined: 'neutral'
+          quarantined: 'neutral',
+          abandoned: 'neutral',
+          success: 'success'
         };
         return (
-          <Badge variant={variants[item.status]}>
+          <Badge variant={variants[item.status] || 'default'}>
             {item.status.toUpperCase()}
           </Badge>
         );
@@ -48,28 +70,37 @@ export function TransactionsScreen() {
     },
     {
       header: 'Risk',
-      cell: (item: Transaction) => {
+      cell: (item: any) => {
+        const risk = item.risk_level || 'low';
         const variants: Record<string, "danger" | "warning" | "default"> = {
           high: 'danger',
           medium: 'warning',
           low: 'default'
         };
         return (
-          <Badge variant={variants[item.riskLevel]}>
-            {item.riskLevel.toUpperCase()}
+          <Badge variant={variants[risk] || 'default'}>
+            {risk.toUpperCase()}
           </Badge>
         );
       },
     },
     {
       header: 'Date',
-      cell: (item: Transaction) => (
+      cell: (item: any) => (
         <span className="text-slate-500">
-          {new Date(item.createdAt).toLocaleDateString()}
+          {new Date(item.created_at).toLocaleDateString()}
         </span>
       ),
     }
   ];
+
+  if (loading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -85,9 +116,9 @@ export function TransactionsScreen() {
           <h3 className="font-semibold text-sm text-slate-700">Recent Transactions</h3>
         </div>
         <DataTable 
-          data={MOCK_TRANSACTIONS} 
+          data={transactions} 
           columns={columns} 
-          onRowClick={(item) => navigate(`/transactions/${item.id}`)}
+          onRowClick={(item: any) => navigate(`/transactions/${item.id}`)}
         />
       </div>
     </div>

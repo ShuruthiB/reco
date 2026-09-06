@@ -41,9 +41,12 @@ export function ExperimentsScreen() {
       if (res.ok) {
         const data = await res.json();
         setExperiments(data);
+      } else {
+        setExperiments([]);
       }
     } catch (err) {
       console.error(err);
+      setExperiments([]);
     } finally {
       setLoading(false);
     }

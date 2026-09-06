@@ -27,6 +27,7 @@ from app.schemas.api import (
     ExperimentDetailResponse,
     ExperimentSummaryResponse,
     PaymentEventResponse,
+    PolicyCreateRequest,
     PolicyResponse,
     SimulationRequest,
     SimulationResponse,
@@ -189,6 +190,52 @@ class DecisionService:
                 else None,
             )
             for decision in decisions
+        ]
+
+    async def list_recent_decisions(self, merchant_id: UUID, limit: int = 50) -> list[DecisionResponse]:
+        from app.domain.models import InterventionDecision, InterventionCandidate, AgentDecision, Transaction
+        from sqlalchemy import select
+        
+        decisions_stmt = (
+            select(InterventionDecision, Transaction)
+            .join(Transaction, InterventionDecision.transaction_id == Transaction.id)
+            .where(InterventionDecision.merchant_id == merchant_id)
+            .order_by(InterventionDecision.created_at.desc())
+            .limit(limit)
+        )
+        results = await self.tx_repo.session.execute(decisions_stmt)
+        decisions_txs = results.all()
+        
+        if not decisions_txs:
+            return []
+            
+        tx_ids = [d.transaction_id for d, _ in decisions_txs]
+        
+        candidates_stmt = select(InterventionCandidate).where(
+            InterventionCandidate.merchant_id == merchant_id,
+            InterventionCandidate.transaction_id.in_(tx_ids)
+        )
+        candidates = (await self.tx_repo.session.execute(candidates_stmt)).scalars().all()
+        
+        agent_stmt = select(AgentDecision).where(
+            AgentDecision.merchant_id == merchant_id,
+            AgentDecision.transaction_id.in_(tx_ids)
+        )
+        agent_decisions = (await self.tx_repo.session.execute(agent_stmt)).scalars().all()
+        agent_by_tx = {ad.transaction_id: ad for ad in agent_decisions}
+        
+        cands_by_tx = {}
+        for c in candidates:
+            cands_by_tx.setdefault(c.transaction_id, []).append(c)
+            
+        return [
+            self._decision_response(
+                decision,
+                cands_by_tx.get(decision.transaction_id, []),
+                tx,
+                agent_by_tx.get(decision.transaction_id).model_version if agent_by_tx.get(decision.transaction_id) else None
+            )
+            for decision, tx in decisions_txs
         ]
 
     async def preview_decision(
@@ -548,26 +595,53 @@ class BudgetService:
 
 class PolicyService:
     def __init__(self, session: AsyncSession) -> None:
-        self.repo = PolicyRepository(session)
+        self.policy_repo = PolicyRepository(session)
         self.engine = PolicyEngine()
 
     async def list_policies(self, merchant_id: UUID) -> list[PolicyResponse]:
-        rows = await self.repo.list_policies(merchant_id)
-        responses = []
-        for policy, version in rows:
-            rules = self.engine.extract_rule_strings(version.rules if version else {})
-            responses.append(
-                PolicyResponse(
-                    id=policy.id,
-                    name=policy.name,
-                    description=policy.description,
-                    status="active" if policy.status == "active" else "inactive",
-                    last_updated=policy.updated_at,
-                    version_label=version.version_label if version else None,
-                    rules=rules,
-                )
+        policies = await self.policy_repo.list_policies(merchant_id)
+        return [
+            PolicyResponse(
+                id=p.id,
+                name=p.name,
+                description=p.description,
+                status=p.status,
+                last_updated=p.updated_at,
+                version_label=v.version_label if v else None,
+                rules=list(v.rules.keys()) if v and v.rules else [],
             )
-        return responses
+            for p, v in policies
+        ]
+
+    async def create_policy(self, merchant_id: UUID, request: PolicyCreateRequest) -> PolicyResponse:
+        from app.domain.models import Policy
+        import uuid
+        from datetime import datetime, timezone
+
+        policy = Policy(
+            id=uuid.uuid4(),
+            merchant_id=merchant_id,
+            name=request.name,
+            description=request.description,
+            status="active",
+            version_label="v1.0",
+            rules=[{"description": r} for r in request.rules],
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+        self.policy_repo.session.add(policy)
+        await self.policy_repo.session.commit()
+        await self.policy_repo.session.refresh(policy)
+
+        return PolicyResponse(
+            id=policy.id,
+            name=policy.name,
+            description=policy.description,
+            status=policy.status,
+            last_updated=policy.updated_at,
+            version_label=policy.version_label,
+            rules=[r["description"] for r in (policy.rules or []) if "description" in r],
+        )
 
 
 class AuditService:

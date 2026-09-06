@@ -1,14 +1,33 @@
-import { MOCK_AUDIT, type AuditEvent } from '../data/mock';
+import { useState, useEffect } from 'react';
 import { DataTable } from '../components/ui/DataTable';
 import { Badge } from '../components/ui/Badge';
-import { ScrollText, FileText } from 'lucide-react';
+import { ScrollText, FileText, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 export function AuditTrailScreen() {
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('http://localhost:8000/api/audit?page=1&page_size=100')
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        setEvents(data.items || []);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setEvents([]);
+        setLoading(false);
+      });
+  }, []);
   const columns = [
     {
       header: 'Timestamp',
-      cell: (item: AuditEvent) => (
+      cell: (item: any) => (
         <span className="font-mono text-xs text-slate-500">
           {new Date(item.timestamp).toLocaleString()}
         </span>
@@ -17,7 +36,7 @@ export function AuditTrailScreen() {
     },
     {
       header: 'Event Type',
-      cell: (item: AuditEvent) => {
+      cell: (item: any) => {
         let variant: 'default' | 'success' | 'neutral' | 'warning' = 'neutral';
         if (item.type.includes('EXECUTED')) variant = 'success';
         if (item.type.includes('POLICY') || item.type.includes('BUDGET')) variant = 'warning';
@@ -32,15 +51,23 @@ export function AuditTrailScreen() {
     },
     {
       header: 'Actor',
-      accessorKey: 'actor' as keyof AuditEvent,
+      accessorKey: 'actor',
       className: 'font-medium w-[180px]'
     },
     {
       header: 'Details',
-      accessorKey: 'details' as keyof AuditEvent,
+      accessorKey: 'details',
       className: 'text-slate-600'
     }
   ];
+
+  if (loading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -60,7 +87,7 @@ export function AuditTrailScreen() {
           <ScrollText className="w-4 h-4 text-slate-500" />
           <h3 className="font-semibold text-sm text-slate-700">Domain Event Log</h3>
         </div>
-        <DataTable data={MOCK_AUDIT} columns={columns} />
+        <DataTable data={events} columns={columns} />
       </div>
     </div>
   );

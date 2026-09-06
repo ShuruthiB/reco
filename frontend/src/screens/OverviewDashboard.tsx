@@ -1,7 +1,7 @@
+import { useState, useEffect } from 'react';
 import { MetricCard } from '../components/ui/MetricCard';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
-import { MOCK_DASHBOARD_METRICS } from '../data/mock';
-import { DollarSign, ShieldAlert, Sparkles, RefreshCcw } from 'lucide-react';
+import { DollarSign, ShieldAlert, Sparkles, RefreshCcw, Loader2 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
@@ -17,6 +17,43 @@ const chartData = [
 ];
 
 export function OverviewDashboard() {
+  const [metrics, setMetrics] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('http://localhost:8000/api/metrics/competition')
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        setMetrics(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching metrics:", err);
+        setMetrics(null); // Ensure fallback triggers
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+      </div>
+    );
+  }
+
+  // Fallback to zeros if fetch failed
+  const m = metrics || {
+    revenue_at_risk: 0,
+    natural_recovery: 0,
+    incremental_recovery: 0,
+    net_incremental_contribution: 0,
+    intervention_cost: 0
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -29,28 +66,28 @@ export function OverviewDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="Revenue at Risk"
-          value={formatCurrency(MOCK_DASHBOARD_METRICS.revenueAtRisk)}
+          value={formatCurrency(m.revenue_at_risk)}
           icon={<ShieldAlert className="h-4 w-4" />}
           trend={{ value: -2.4, label: "from last week" }}
         />
         <MetricCard
           title="Natural Recovery (Gross)"
-          value={formatCurrency(MOCK_DASHBOARD_METRICS.naturalRecovery)}
+          value={formatCurrency(m.natural_recovery)}
           icon={<RefreshCcw className="h-4 w-4" />}
           highlight="natural"
           trend={{ value: 1.2, label: "baseline trend" }}
         />
         <MetricCard
           title="AI Incremental Revenue"
-          value={formatCurrency(MOCK_DASHBOARD_METRICS.aiIncrementalRevenue)}
+          value={formatCurrency(m.incremental_recovery)}
           icon={<Sparkles className="h-4 w-4" />}
           highlight="incremental"
           trend={{ value: 14.5, label: "uplift vs baseline" }}
         />
         <MetricCard
           title="Net Incremental Revenue"
-          value={formatCurrency(MOCK_DASHBOARD_METRICS.netIncrementalRevenue)}
-          subtitle={`After ${formatCurrency(MOCK_DASHBOARD_METRICS.interventionCost)} intervention cost`}
+          value={formatCurrency(m.net_incremental_contribution)}
+          subtitle={`After ${formatCurrency(m.intervention_cost)} intervention cost`}
           icon={<DollarSign className="h-4 w-4 text-indigo-400" />}
           highlight="net"
         />
