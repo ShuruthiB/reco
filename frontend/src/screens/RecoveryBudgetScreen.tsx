@@ -39,7 +39,7 @@ export function RecoveryBudgetScreen() {
   const handleSimulate = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/api/optimizer/simulate', {
+      const res = await fetch('/api/optimizer/simulate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(constraints)
@@ -156,9 +156,9 @@ export function RecoveryBudgetScreen() {
                         <tr key={opp.transaction_id} className="hover:bg-slate-50">
                           <td className="px-4 py-3 font-mono text-xs text-slate-500">{opp.transaction_id.slice(0, 8)}...</td>
                           <td className="px-4 py-3 font-medium text-slate-700">{opp.action}</td>
-                          <td className="px-4 py-3 text-right text-red-600">${opp.intervention_cost.toFixed(2)}</td>
-                          <td className="px-4 py-3 text-right text-emerald-600 font-medium">${opp.net_incremental_value.toFixed(2)}</td>
-                          <td className="px-4 py-3 text-right text-slate-600">{opp.roi > 1000 ? '∞' : opp.roi.toFixed(1)}x</td>
+                          <td className="px-4 py-3 text-right text-red-600">${Number(opp.intervention_cost).toFixed(2)}</td>
+                          <td className="px-4 py-3 text-right text-emerald-600 font-medium">${Number(opp.net_incremental_value).toFixed(2)}</td>
+                          <td className="px-4 py-3 text-right text-slate-600">{Number(opp.roi) > 1000 ? '∞' : Number(opp.roi).toFixed(1)}x</td>
                         </tr>
                       ))}
                     </tbody>

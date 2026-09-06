@@ -10,7 +10,7 @@ export function TransactionsScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/transactions?page=1&page_size=50')
+    fetch('/api/transactions?page=1&page_size=50')
       .then(res => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
@@ -29,7 +29,7 @@ export function TransactionsScreen() {
   const columns = [
     {
       header: 'Transaction ID',
-      accessorKey: 'id' as keyof Transaction,
+      accessorKey: 'id',
       className: 'font-medium',
     },
     {

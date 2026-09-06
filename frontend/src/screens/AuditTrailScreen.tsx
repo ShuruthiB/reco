@@ -9,7 +9,7 @@ export function AuditTrailScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/audit?page=1&page_size=100')
+    fetch('/api/audit?page=1&page_size=100')
       .then(res => {
         if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
         return res.json();

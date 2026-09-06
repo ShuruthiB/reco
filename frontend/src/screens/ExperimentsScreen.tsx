@@ -37,7 +37,7 @@ export function ExperimentsScreen() {
 
   const fetchExperiments = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/experiments');
+      const res = await fetch('/api/experiments');
       if (res.ok) {
         const data = await res.json();
         setExperiments(data);
@@ -59,7 +59,7 @@ export function ExperimentsScreen() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:8000/api/experiments', {
+      const res = await fetch('/api/experiments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -177,18 +177,18 @@ export function ExperimentsScreen() {
                       
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-sm font-medium text-slate-700">CONTROL Recovery:</span>
-                        <span className="text-lg font-semibold text-slate-900">{(exp.control_recovery_rate * 100).toFixed(1)}%</span>
+                        <span className="text-lg font-semibold text-slate-900">{(Number(exp.control_recovery_rate) * 100).toFixed(1)}%</span>
                       </div>
                       
                       <div className="flex justify-between items-center mb-6">
                         <span className="text-sm font-medium text-slate-700">TREATMENT Recovery:</span>
-                        <span className="text-lg font-semibold text-slate-900">{(exp.treatment_recovery_rate * 100).toFixed(1)}%</span>
+                        <span className="text-lg font-semibold text-slate-900">{(Number(exp.treatment_recovery_rate) * 100).toFixed(1)}%</span>
                       </div>
                       
                       <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-lg flex justify-between items-center">
                         <span className="text-sm font-semibold text-indigo-900">Estimated incremental lift:</span>
                         <span className={`text-lg font-bold ${exp.estimated_lift_points > 0 ? 'text-emerald-600' : 'text-slate-700'}`}>
-                          {exp.estimated_lift_points > 0 ? '+' : ''}{exp.estimated_lift_points.toFixed(1)} percentage points
+                          {Number(exp.estimated_lift_points) > 0 ? '+' : ''}{Number(exp.estimated_lift_points).toFixed(1)} percentage points
                         </span>
                       </div>
                     </div>

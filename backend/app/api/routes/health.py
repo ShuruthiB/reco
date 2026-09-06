@@ -32,7 +32,7 @@ from app.services.domain_services import (
     TransactionService,
 )
 
-router = APIRouter(tags=["health"])
+router = APIRouter(prefix="/api", tags=["health"])
 
 
 @router.get("/health", response_model=HealthResponse)

@@ -21,7 +21,7 @@ export function OverviewDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/metrics/competition')
+    fetch('/api/metrics/competition')
       .then(res => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();

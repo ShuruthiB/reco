@@ -12,7 +12,7 @@ export function PoliciesScreen() {
 
   const fetchPolicies = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/policies');
+      const res = await fetch('/api/policies');
       if (res.ok) {
         setPolicies(await res.json());
       }
@@ -31,7 +31,7 @@ export function PoliciesScreen() {
     e.preventDefault();
     try {
       const rulesArray = formData.rules.split('\n').filter(r => r.trim().length > 0);
-      const res = await fetch('http://localhost:8000/api/policies', {
+      const res = await fetch('/api/policies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formData, rules: rulesArray })
@@ -118,7 +118,7 @@ export function PoliciesScreen() {
             <CardContent className="pt-6">
               <h4 className="text-sm font-semibold text-slate-900 mb-3">Active Rules</h4>
               <ul className="space-y-2">
-                {policy.rules.map((rule, idx) => (
+                {policy.rules.map((rule: string, idx: number) => (
                   <li key={idx} className="flex items-start gap-2 text-sm text-slate-700 bg-white p-3 border border-slate-200 rounded-md shadow-sm">
                     <span className="font-mono text-xs text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 mt-0.5">R{idx + 1}</span>
                     {rule}

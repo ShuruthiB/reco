@@ -4,12 +4,15 @@ import { Badge } from '../components/ui/Badge';
 import { DataTable } from '../components/ui/DataTable';
 import { BrainCircuit, CheckCircle2, XCircle, AlertCircle, TrendingUp, ShieldAlert, FileText, Ban, Loader2 } from 'lucide-react';
 
-const formatCurrency = (val: number) => `$${val.toFixed(2)}`;
-const formatPercent = (val: number) => `${(val * 100).toFixed(1)}%`;
+const formatCurrency = (val: number) => `$${Number(val).toFixed(2)}`;
+const formatPercent = (val: number) => `${(Number(val) * 100).toFixed(1)}%`;
 
 const getActionStyle = (action: string) => {
   if (action === 'DO_NOTHING') return "bg-slate-100 text-slate-700 border-slate-200";
-  return "bg-brand-50 text-brand-700 border-brand-200";
+  if (action === 'FINANCIAL' || action === 'RETRY' || action === 'INCENTIVE') return "bg-emerald-100 text-emerald-700 border-emerald-200";
+  if (action === 'COMMUNICATION' || action === 'REMINDER' || action === 'REMINDER_EMAIL') return "bg-blue-100 text-blue-700 border-blue-200";
+  if (action === 'ESCALATION' || action === 'ESCALATE' || action === 'MANUAL_REVIEW') return "bg-rose-100 text-rose-700 border-rose-200";
+  return "bg-purple-100 text-purple-700 border-purple-200"; // Fallback for ALTERNATIVE_METHOD etc
 };
 
 export function AIDecisionCenterScreen() {
@@ -17,7 +20,7 @@ export function AIDecisionCenterScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/decisions')
+    fetch('/api/decisions')
       .then(res => {
         if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
         return res.json();
@@ -170,11 +173,11 @@ export function AIDecisionCenterScreen() {
                       <div className="flex items-center gap-3">
                         <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
                           <div 
-                            className={`h-full ${decision.confidence > 0.8 ? 'bg-emerald-500' : decision.confidence > 0.5 ? 'bg-amber-500' : 'bg-rose-500'}`} 
-                            style={{ width: `${decision.confidence * 100}%` }}
+                            className={`h-full ${Number(decision.confidence) > 0.8 ? 'bg-emerald-500' : Number(decision.confidence) > 0.5 ? 'bg-amber-500' : 'bg-rose-500'}`} 
+                            style={{ width: `${Number(decision.confidence) * 100}%` }}
                           />
                         </div>
-                        <span className="text-sm font-bold numeric-data tracking-tight text-slate-700">{(decision.confidence * 100).toFixed(0)}%</span>
+                        <span className="text-sm font-bold numeric-data tracking-tight text-slate-700">{decision.confidence != null ? (Number(decision.confidence) * 100).toFixed(0) : 0}%</span>
                       </div>
                     </div>
 

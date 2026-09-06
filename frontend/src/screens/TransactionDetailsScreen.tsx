@@ -16,8 +16,8 @@ export function TransactionDetailsScreen() {
     if (!id) return;
     
     Promise.all([
-      fetch(`http://localhost:8000/api/transactions/${id}`).then(r => r.json()),
-      fetch(`http://localhost:8000/api/transactions/${id}/decisions`).then(r => r.json())
+      fetch(`/api/transactions/${id}`).then(r => r.json()),
+      fetch(`/api/transactions/${id}/decisions`).then(r => r.json())
     ])
     .then(([txData, decData]) => {
       setTransaction(txData);
@@ -134,7 +134,9 @@ export function TransactionDetailsScreen() {
                   </Link>
                 </div>
               ) : (
-                <p className="text-sm text-slate-500 italic">No AI decision recorded.</p>
+                <p className="text-sm text-slate-500 italic">
+                  {transaction.status?.toLowerCase() === 'success' ? 'Not applicable (Payment successful on first attempt).' : 'No AI decision recorded.'}
+                </p>
               )}
             </div>
           </CardContent>
